@@ -89,7 +89,7 @@ END//
 
 DELIMITER //
 
-CREATE TEMPORARY TABLE IF NOT EXISTS temp_results (
+CREATE TEMPORARY TABLE IF NOT EXISTS temp_results2 (
     cours INT,
     score DECIMAL(5,2)
 );
@@ -118,18 +118,18 @@ BEGIN
         END IF;
         IF score IS NOT NULL THEN
             -- Insérer les données filtrées dans la table temporaire
-            INSERT INTO temp_results (cours, score) VALUES (cours_id, score);
+            INSERT INTO temp_results2 (cours, score) VALUES (cours_id, score);
         END IF;
     END LOOP;
     CLOSE cur;
     
     -- Sélectionner les résultats de la table temporaire pour les afficher
     SELECT C.NOM AS 'Cours', TR.score
-    FROM temp_results TR
+    FROM temp_results2 TR
     JOIN COURS C ON TR.cours = C.NUM_COURS;
     
     -- Suppression de la table temporaire à la fin du traitement
-    DROP TEMPORARY TABLE IF EXISTS temp_results;
+    DROP TEMPORARY TABLE IF EXISTS temp_results2;
 END//
 DELIMITER ;
 
