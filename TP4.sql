@@ -128,6 +128,30 @@ BEGIN
 END //
 DELIMITER ;
 
+CREATE TABLE resultats_changements_log (
+    num_eleve INT,
+    num_cours INT,
+    ancienne_valeur INT,
+    nouvelle_valeur INT,
+    date_changement DATE
+);
+
+
+DELIMITER //
+CREATE TRIGGER audit_résultats_changements
+BEFORE UPDATE ON RESULTATS
+FOR EACH ROW
+BEGIN
+    INSERT INTO resultats_changements_log (num_eleve, num_cours, ancienne_valeur, nouvelle_valeur, date_changement)
+    VALUES (OLD.NUM_ELEVE, OLD.NUM_COURS, OLD.POINTS, NEW.POINTS, CURDATE());
+END //
+DELIMITER ;
+
+
+UPDATE RESULTATS
+SET POINTS = 18
+WHERE NUM_ELEVE = 1 AND NUM_COURS = 1;
+
 
 
 CALL generer_rapport_etudiant(2);
@@ -135,3 +159,4 @@ CALL liste_cours_etudiant(4);
 CALL liste_cours_etudiant2(4);
 CALL liste_cours_etudiants_unifies(4);
 SELECT etudiant_a_réussi(4);
+SELECT * FROM resultats_changements_log;
