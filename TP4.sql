@@ -44,13 +44,14 @@ BEGIN
     CLOSE cur;
 END//
 DELIMITER ;
+
 DELIMITER //
 CREATE TEMPORARY TABLE IF NOT EXISTS temp_results (
     cours INT,
     score DECIMAL(5,2)
 );
-CREATE PROCEDURE liste_cours_etudiant2 (IN sid INT)
-BEGIN    
+CREATE PROCEDURE liste_cours_etudiants_unifies (IN sid INT)
+BEGIN
     DECLARE fin BOOLEAN DEFAULT FALSE;
     DECLARE cours_id INT;
     DECLARE score DECIMAL(5,2);
@@ -73,39 +74,7 @@ BEGIN
     SELECT C.NOM AS 'Cours', TR.score
     FROM temp_results TR
     JOIN COURS C ON TR.cours = C.NUM_COURS;
-	DROP TEMPORARY TABLE IF EXISTS temp_results;
-END//
-DELIMITER ;
-DELIMITER //
-CREATE TEMPORARY TABLE IF NOT EXISTS temp_results2 (
-    cours INT,
-    score DECIMAL(5,2)
-);
-CREATE PROCEDURE liste_cours_etudiants_unifies (IN sid INT)
-BEGIN
-    DECLARE fin BOOLEAN DEFAULT FALSE;
-    DECLARE cours_id INT;
-    DECLARE score DECIMAL(5,2);
-    DECLARE cur CURSOR FOR
-        SELECT C.NUM_COURS, R.POINTS
-        FROM COURS C
-        LEFT JOIN RESULTATS R ON C.NUM_COURS = R.NUM_COURS AND R.NUM_ELEVE = sid;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin = TRUE;
-    OPEN cur;
-    courses_loop: LOOP
-        FETCH cur INTO cours_id, score;
-        IF fin THEN
-            LEAVE courses_loop;
-        END IF;
-        IF score IS NOT NULL THEN
-            INSERT INTO temp_results2 (cours, score) VALUES (cours_id, score);
-        END IF;
-    END LOOP;
-    CLOSE cur;
-    SELECT C.NOM AS 'Cours', TR.score
-    FROM temp_results2 TR
-    JOIN COURS C ON TR.cours = C.NUM_COURS;
-    DROP TEMPORARY TABLE IF EXISTS temp_results2;
+    DROP TEMPORARY TABLE IF EXISTS temp_results;
 END//
 DELIMITER ;
 DELIMITER //
@@ -146,6 +115,18 @@ BEGIN
     VALUES (OLD.NUM_ELEVE, OLD.NUM_COURS, OLD.POINTS, NEW.POINTS, CURDATE());
 END //
 DELIMITER ;
+DELIMITER //
+CREATE TRIGGER empecher_suppression_prof
+BEFORE DELETE ON PROFESSEURS
+FOR EACH ROW
+BEGIN
+    IF (EXISTS (SELECT 1 FROM CHARGE WHERE NUM_PROF = OLD.NUM_PROF)) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erreur : Impossible de supprimer le professeur car il est encore affecté à un cours.';
+    END IF;
+END //
+
+DELIMITER ;
 
 
 UPDATE RESULTATS
@@ -154,9 +135,11 @@ WHERE NUM_ELEVE = 1 AND NUM_COURS = 1;
 
 
 
+
+
 CALL generer_rapport_etudiant(2);
 CALL liste_cours_etudiant(4);
-CALL liste_cours_etudiant2(4);
 CALL liste_cours_etudiants_unifies(4);
 SELECT etudiant_a_réussi(4);
 SELECT * FROM resultats_changements_log;
+DELETE FROM PROFESSEURS WHERE NUM_PROF = 1;
