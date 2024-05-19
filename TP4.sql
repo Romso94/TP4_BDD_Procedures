@@ -127,7 +127,22 @@ BEGIN
 END //
 
 DELIMITER ;
-
+DELIMITER //
+CREATE TRIGGER limite_inscriptions_cours
+BEFORE INSERT ON RESULTATS
+FOR EACH ROW
+BEGIN
+    DECLARE total_inscriptions INT;
+    SELECT COUNT(*)
+    INTO total_inscriptions
+    FROM RESULTATS
+    WHERE NUM_COURS = NEW.NUM_COURS;
+    IF total_inscriptions >= 10 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erreur : Limite d\'inscription pour ce cours  atteinte.';
+    END IF;
+END //
+DELIMITER ;
 
 UPDATE RESULTATS
 SET POINTS = 18
@@ -136,7 +151,7 @@ WHERE NUM_ELEVE = 1 AND NUM_COURS = 1;
 
 
 
-
+INSERT INTO RESULTATS (NUM_ELEVE, NUM_COURS, POINTS) VALUES (1, 1, 12);
 CALL generer_rapport_etudiant(2);
 CALL liste_cours_etudiant(4);
 CALL liste_cours_etudiants_unifies(4);
