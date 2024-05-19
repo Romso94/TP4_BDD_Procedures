@@ -108,10 +108,30 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS temp_results2;
 END//
 DELIMITER ;
+DELIMITER //
+CREATE FUNCTION etudiant_a_réussi(sid INT)
+RETURNS VARCHAR(3)
+DETERMINISTIC
+BEGIN
+    DECLARE moyenne FLOAT;
+    DECLARE resultat VARCHAR(3);
+    SELECT AVG(points) INTO moyenne
+    FROM RESULTATS
+    WHERE NUM_ELEVE = sid;
+    IF moyenne >= 10 THEN
+        SET resultat = 'Oui';
+    ELSE
+        SET resultat = 'Non';
+    END IF;
+
+    RETURN resultat;
+END //
+DELIMITER ;
 
 
 
- CALL generer_rapport_etudiant(2);
- CALL liste_cours_etudiant(4);
- CALL liste_cours_etudiant2(4);
+CALL generer_rapport_etudiant(2);
+CALL liste_cours_etudiant(4);
+CALL liste_cours_etudiant2(4);
 CALL liste_cours_etudiants_unifies(4);
+SELECT etudiant_a_réussi(4);
